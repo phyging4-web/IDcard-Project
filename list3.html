@@ -1728,17 +1728,38 @@
                     const tableName = "discipline_reports";
                     console.log(`🔍 Loading discipline summary data from ${tableName}...`);
                     
-                    const { data, error } = await supabase
-                        .from(tableName)
-                        .select('*');
-                    
-                    if (error) {
-                        console.error('❌ Error loading discipline summary:', error);
+                    // Fetch all rows in batches to avoid SDK/transport limits
+                    const batchSize = 1000;
+                    let fetched = [];
+                    let from = 0;
+                    let fetchError = null;
+                    while (true) {
+                        const { data, error } = await supabase
+                            .from(tableName)
+                            .select('*')
+                            .range(from, from + batchSize - 1);
+
+                        if (error) {
+                            console.error('❌ Error fetching discipline batch:', error);
+                            fetchError = error;
+                            break;
+                        }
+
+                        if (!data || data.length === 0) break;
+
+                        fetched = fetched.concat(data);
+
+                        if (data.length < batchSize) break;
+                        from += batchSize;
+                    }
+
+                    if (fetchError) {
+                        console.error('❌ Error loading discipline summary:', fetchError);
                         allReports = JSON.parse(localStorage.getItem('disciplineReports') || '[]');
                     } else {
-                        allReports = data || [];
+                        allReports = fetched || [];
                     }
-                    
+
                     console.log(`✅ Loaded ${allReports.length} discipline records for summary`);
                     
                     updateDisciplineSummaryReport();
@@ -2127,17 +2148,38 @@
                     const tableName = "attendance_reports";
                     console.log(`🔍 Loading summary data from ${tableName}...`);
                     
-                    const { data, error } = await supabase
-                        .from(tableName)
-                        .select('*');
-                    
-                    if (error) {
-                        console.error('❌ Error loading summary:', error);
+                    // Fetch all rows in batches to avoid SDK/transport limits
+                    const batchSize = 1000;
+                    let fetched = [];
+                    let from = 0;
+                    let fetchError = null;
+                    while (true) {
+                        const { data, error } = await supabase
+                            .from(tableName)
+                            .select('*')
+                            .range(from, from + batchSize - 1);
+
+                        if (error) {
+                            console.error('❌ Error fetching summary batch:', error);
+                            fetchError = error;
+                            break;
+                        }
+
+                        if (!data || data.length === 0) break;
+
+                        fetched = fetched.concat(data);
+
+                        if (data.length < batchSize) break;
+                        from += batchSize;
+                    }
+
+                    if (fetchError) {
+                        console.error('❌ Error loading summary:', fetchError);
                         allReports = JSON.parse(localStorage.getItem('lateReports') || '[]');
                     } else {
-                        allReports = data || [];
+                        allReports = fetched || [];
                     }
-                    
+
                     console.log(`✅ Loaded ${allReports.length} records for summary`);
                     
                     updateSummaryReport();
